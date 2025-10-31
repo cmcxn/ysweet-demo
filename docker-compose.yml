@@ -1,0 +1,21 @@
+version: '3.8'
+services:
+  ysweet:
+    build: .
+    container_name: ysweet
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  auth:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.auth
+    container_name: ysweet-auth
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped

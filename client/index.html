@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>Y-Sweet + Yjs 测试</title>
+</head>
+<body>
+  <h1>共享测试 – Y-Sweet + Yjs</h1>
+  <div>
+    <label>输入内容：</label>
+    <input type="text" id="inputField" />
+  </div>
+  <div>
+    <h3>共享 Map 内容：</h3>
+    <pre id="sharedData">空</pre>
+  </div>
+
+  <script type="module">
+    import * as Y from 'https://cdn.jsdelivr.net/npm/yjs@13.5.45/+esm';
+    import { createYjsProvider } from 'https://cdn.jsdelivr.net/npm/@y-sweet/client@0.9.1/+esm';
+    const doc = new Y.Doc();
+    const docId = 'test-doc';
+    const authEndpoint = 'http://localhost:3001/api/auth';
+    createYjsProvider(doc, docId, authEndpoint, { url: 'ws://localhost:8080' });
+    const sharedMap = doc.getMap('sharedMap');
+    const inputField = document.getElementById('inputField');
+    const sharedDataPre = document.getElementById('sharedData');
+    inputField.addEventListener('input', () => sharedMap.set('text', inputField.value));
+    const render = () => sharedDataPre.textContent = JSON.stringify(Array.from(sharedMap.entries()), null, 2);
+    render();
+    sharedMap.observe(() => { render(); if (sharedMap.has('text')) inputField.value = sharedMap.get('text'); });
+  </script>
+</body>
+</html>
