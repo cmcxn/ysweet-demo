@@ -36,10 +36,11 @@ echo ""
 echo "Test 3: Simulating healthcheck scenario..."
 echo "  Starting a simple HTTP server on port 8080..."
 
-# Start a simple server in the background
-docker run --rm -d --name test-server -p 18080:8080 node:20-alpine sh -c "
+# Start a simple server in the background with timeout
+timeout 30 docker run --rm -d --name test-server -p 18080:8080 node:20-alpine sh -c "
+trap 'exit 0' TERM INT
 while true; do
-    echo -e 'HTTP/1.1 200 OK\r\n\r\nOK' | nc -l -p 8080
+    echo -e 'HTTP/1.1 200 OK\r\n\r\nOK' | nc -l -p 8080 || break
 done
 " > /dev/null 2>&1
 

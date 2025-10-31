@@ -21,10 +21,10 @@ TESTS_FAILED=0
 print_result() {
     if [ $1 -eq 0 ]; then
         echo -e "${GREEN}✓ PASS${NC}: $2"
-        TESTS_PASSED=$((TESTS_PASSED + 1))
+        ((TESTS_PASSED++)) || true
     else
         echo -e "${RED}✗ FAIL${NC}: $2"
-        TESTS_FAILED=$((TESTS_FAILED + 1))
+        ((TESTS_FAILED++)) || true
         return 1
     fi
 }

@@ -150,7 +150,7 @@ nc -z localhost 8080
 
 node:20-alpine 使用 BusyBox 版本的 nc：
 ```
-BusyBox v1.37.0 (2025-08-05 16:40:33 UTC) multi-call binary.
+BusyBox v1.37.0 multi-call binary
 ```
 
 支持的选项包括 `-z` 用于端口扫描。
