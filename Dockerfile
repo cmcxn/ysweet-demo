@@ -1,6 +1,5 @@
 FROM node:20-alpine
-RUN apk add --no-cache curl \
-    && npm config set registry https://registry.npmmirror.com \
+RUN npm config set registry https://registry.npmmirror.com \
     && npm install -g y-sweet
 WORKDIR /app/data
 EXPOSE 8080
