@@ -97,9 +97,63 @@ COMPOSE_PID=$!
 echo "  Waiting for containers to start..."
 sleep 5
 
-# Test 8: Check if ysweet container is running
+# Test 8: Check if MinIO container is running
 echo ""
-echo "Test 8: Checking if ysweet container is running..."
+echo "Test 8: Checking if MinIO container is running..."
+if docker ps | grep -q "ysweet-minio"; then
+    print_result 0 "MinIO container is running"
+else
+    print_result 1 "MinIO container is not running"
+    docker compose logs minio | tail -20 | sed 's/^/    /'
+fi
+
+# Test 9: Wait for MinIO healthcheck
+echo ""
+echo "Test 9: Waiting for MinIO healthcheck to pass (max 60s)..."
+MINIO_HEALTH_PASSED=0
+for i in {1..12}; do
+    MINIO_HEALTH=$(docker inspect --format='{{.State.Health.Status}}' ysweet-minio 2>/dev/null || echo "none")
+    echo "  Attempt $i/12: MinIO health status = $MINIO_HEALTH"
+
+    if [ "$MINIO_HEALTH" = "healthy" ]; then
+        MINIO_HEALTH_PASSED=1
+        break
+    fi
+
+    if [ "$MINIO_HEALTH" = "unhealthy" ]; then
+        echo "  MinIO container became unhealthy. Checking logs..."
+        docker inspect --format='{{range .State.Health.Log}}{{.Output}}{{end}}' ysweet-minio 2>/dev/null | sed 's/^/    /'
+        break
+    fi
+
+    sleep 5
+done
+
+if [ $MINIO_HEALTH_PASSED -eq 1 ]; then
+    print_result 0 "MinIO healthcheck passed"
+else
+    print_result 1 "MinIO healthcheck failed"
+    echo "  MinIO logs:"
+    docker compose logs minio | tail -30 | sed 's/^/    /'
+    echo "  Health check logs:"
+    docker inspect --format='{{json .State.Health}}' ysweet-minio 2>/dev/null | sed 's/^/    /'
+fi
+
+# Test 10: Check MinIO bucket initialization job
+echo ""
+echo "Test 10: Checking MinIO bucket initialization job..."
+BUCKET_STATUS=$(docker inspect --format='{{.State.Status}}' ysweet-minio-mc 2>/dev/null || echo "not_found")
+BUCKET_EXIT=$(docker inspect --format='{{.State.ExitCode}}' ysweet-minio-mc 2>/dev/null || echo "unknown")
+if [ "$BUCKET_STATUS" = "exited" ] && [ "$BUCKET_EXIT" = "0" ]; then
+    print_result 0 "Bucket initialization job completed successfully"
+else
+    print_result 1 "Bucket initialization job failed (status=$BUCKET_STATUS exit=$BUCKET_EXIT)"
+    docker logs ysweet-minio-mc 2>/dev/null | tail -20 | sed 's/^/    /'
+fi
+
+# Test 11: Check if ysweet container is running
+echo ""
+echo "Test 11: Checking if ysweet container is running..."
 if docker ps | grep -q "ysweet"; then
     print_result 0 "ysweet container is running"
 else
@@ -107,25 +161,25 @@ else
     docker compose logs ysweet | tail -20 | sed 's/^/    /'
 fi
 
-# Test 9: Wait for ysweet healthcheck
+# Test 12: Wait for ysweet healthcheck
 echo ""
-echo "Test 9: Waiting for ysweet healthcheck to pass (max 60s)..."
+echo "Test 12: Waiting for ysweet healthcheck to pass (max 60s)..."
 HEALTHCHECK_PASSED=0
 for i in {1..12}; do
     HEALTH_STATUS=$(docker inspect --format='{{.State.Health.Status}}' ysweet 2>/dev/null || echo "none")
     echo "  Attempt $i/12: Health status = $HEALTH_STATUS"
-    
+
     if [ "$HEALTH_STATUS" = "healthy" ]; then
         HEALTHCHECK_PASSED=1
         break
     fi
-    
+
     if [ "$HEALTH_STATUS" = "unhealthy" ]; then
         echo "  Container became unhealthy. Checking logs..."
         docker inspect --format='{{range .State.Health.Log}}{{.Output}}{{end}}' ysweet 2>/dev/null | sed 's/^/    /'
         break
     fi
-    
+
     sleep 5
 done
 
@@ -139,9 +193,9 @@ else
     docker inspect --format='{{json .State.Health}}' ysweet 2>/dev/null | sed 's/^/    /'
 fi
 
-# Test 10: Check if auth container started
+# Test 13: Check if auth container started
 echo ""
-echo "Test 10: Checking if auth container is running..."
+echo "Test 13: Checking if auth container is running..."
 sleep 5  # Give auth time to start after ysweet becomes healthy
 if docker ps | grep -q "ysweet-auth"; then
     print_result 0 "auth container is running"
@@ -151,27 +205,27 @@ else
     docker compose logs auth 2>/dev/null | tail -20 | sed 's/^/    /'
 fi
 
-# Test 11: Test ysweet port accessibility
+# Test 14: Test ysweet port accessibility
 echo ""
-echo "Test 11: Testing ysweet port accessibility..."
+echo "Test 14: Testing ysweet port accessibility..."
 if timeout 5 bash -c "echo > /dev/tcp/localhost/8080" 2>/dev/null; then
     print_result 0 "ysweet port 8080 is accessible"
 else
     print_result 1 "ysweet port 8080 is not accessible"
 fi
 
-# Test 12: Test auth port accessibility
+# Test 15: Test auth port accessibility
 echo ""
-echo "Test 12: Testing auth port accessibility..."
+echo "Test 15: Testing auth port accessibility..."
 if timeout 5 bash -c "echo > /dev/tcp/localhost/3001" 2>/dev/null; then
     print_result 0 "auth port 3001 is accessible"
 else
     print_result 1 "auth port 3001 is not accessible"
 fi
 
-# Test 13: Test auth API endpoint
+# Test 16: Test auth API endpoint
 echo ""
-echo "Test 13: Testing auth API endpoint..."
+echo "Test 16: Testing auth API endpoint..."
 sleep 2  # Give auth service time to fully start
 AUTH_RESPONSE=$(curl -s -X POST http://localhost:3001/api/auth \
     -H "Content-Type: application/json" \
@@ -190,9 +244,9 @@ else
     echo "  Response: $RESPONSE_BODY"
 fi
 
-# Test 14: Check for errors in logs
+# Test 17: Check for errors in logs
 echo ""
-echo "Test 14: Checking for errors in container logs..."
+echo "Test 17: Checking for errors in container logs..."
 ERROR_COUNT=$(docker compose logs 2>&1 | grep -i "error\|failed\|refused" | grep -v "healthcheck" | wc -l)
 if [ $ERROR_COUNT -eq 0 ]; then
     print_result 0 "No errors found in container logs"
