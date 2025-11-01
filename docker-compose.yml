@@ -63,7 +63,7 @@ services:
       start_period: 15s
 
   minio-create-bucket:
-    image: minio/mc:RELEASE.2024-09-16T19-35-22Z
+    image: minio/mc:RELEASE.2024-09-16T17-43-14Z
     container_name: ysweet-minio-mc
     depends_on:
       minio:
