@@ -28,7 +28,7 @@ app.post('/api/auth', async (req, res) => {
     const docId = req.body?.docId;
     if (!docId) return res.status(400).json({ error: 'docId 必填' });
     const clientToken = await manager.getOrCreateDocAndToken(docId);
-    res.json({ token: clientToken });
+    res.json(clientToken);
   } catch (err) {
     console.error('生成 client token 出错', err);
     res.status(500).json({ error: '服务器内部错误' });
