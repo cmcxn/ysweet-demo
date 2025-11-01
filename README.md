@@ -13,6 +13,8 @@
 ## 注意事项
 - auth 服务使用 Docker 服务名 `ysweet:8080` 进行容器间通信
 - 客户端使用 `localhost:8080` 从浏览器连接到 ysweet 服务（通过端口映射）
+- 可以通过设置 `PUBLIC_YSWEET_URL`（默认为 `ws://localhost:8080`）来控制发给浏览器的 WebSocket 访问地址，
+  确保在 Docker 外部访问时不会收到 `ws://ysweet:8080` 这样的内部主机名
 
 ## Docker 网络配置
 为了确保 auth 服务能够正确连接到 ysweet 服务，已配置以下机制：
