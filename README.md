@@ -6,7 +6,7 @@
 3. 打开 `client/index.html`，在两个浏览器窗口中测试共享同步。
 
 ## 架构说明
-- **ysweet 服务**：在端口 8080 上提供 Y-Sweet WebSocket 服务器
+- **ysweet 服务**：在端口 8080 上提供 Y-Sweet WebSocket 服务器，并显式监听 `0.0.0.0` 以供其他容器访问
 - **auth 服务**：在端口 3001 上提供认证 API (`/api/auth`)
 - **client**：浏览器端应用，连接到 ysweet 和 auth 服务
 

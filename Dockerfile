@@ -1,5 +1,7 @@
 FROM node:20-alpine
-RUN npm install -g y-sweet
+
+RUN apk add --no-cache netcat-openbsd \
+    && npm install -g y-sweet
 WORKDIR /app/data
 EXPOSE 8080
-CMD ["y-sweet", "serve", "/app/data"]
+CMD ["y-sweet", "serve", "--host", "0.0.0.0", "/app/data"]

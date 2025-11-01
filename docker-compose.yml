@@ -24,7 +24,10 @@ services:
     environment:
       - NODE_ENV=production
       - CONNECTION_STRING=ys://ysweet:8080
+      - CLIENT_DIR=/app/client
     restart: unless-stopped
     depends_on:
       ysweet:
         condition: service_healthy
+    volumes:
+      - ./client:/app/client:ro
