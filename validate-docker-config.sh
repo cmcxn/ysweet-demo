@@ -144,9 +144,66 @@ else
     print_result 1 "CONNECTION_STRING configuration is incorrect"
 fi
 
-# Test 9: Verify Dockerfile existence
+# Test 9: Check S3 configuration for ysweet service
 echo ""
-echo "Test 9: Checking Dockerfile files..."
+echo "Test 9: Checking S3 configuration for ysweet service..."
+if echo "$CONFIG" | grep -A 15 "ysweet:" | grep -q "Y_SWEET_STORAGE_PATH: s3://ysweet-data"; then
+    print_result 0 "ysweet stores data in the expected MinIO bucket"
+else
+    print_result 1 "ysweet storage path is not configured for MinIO"
+fi
+
+if echo "$CONFIG" | grep -A 15 "ysweet:" | grep -q "AWS_ENDPOINT_URL_S3: http://minio:9000"; then
+    print_result 0 "ysweet S3 endpoint points to the MinIO service"
+else
+    print_result 1 "ysweet S3 endpoint is not configured correctly"
+fi
+
+if echo "$CONFIG" | grep -A 15 "ysweet:" | grep -q "AWS_S3_USE_PATH_STYLE:.*true"; then
+    print_result 0 "ysweet is configured to use path-style requests for MinIO"
+else
+    print_result 1 "ysweet path-style configuration is missing"
+fi
+
+# Test 10: Check MinIO service configuration
+echo ""
+echo "Test 10: Checking MinIO service configuration..."
+if echo "$CONFIG" | grep -q "^  minio:"; then
+    print_result 0 "minio service is defined"
+else
+    print_result 1 "minio service is missing from docker-compose.yml"
+fi
+
+if echo "$CONFIG" | grep -A 8 "minio:" | grep -q "MINIO_ROOT_USER:.*ysweetadmin"; then
+    print_result 0 "MinIO root user is configured"
+else
+    print_result 1 "MinIO root user is not configured"
+fi
+
+if echo "$CONFIG" | grep -A 8 "minio:" | grep -q "MINIO_ROOT_PASSWORD:.*ysweetsecret"; then
+    print_result 0 "MinIO root password is configured"
+else
+    print_result 1 "MinIO root password is not configured"
+fi
+
+# Test 11: Check MinIO bucket initialization job
+echo ""
+echo "Test 11: Checking MinIO bucket initialization job..."
+if echo "$CONFIG" | grep -q "^  minio-create-bucket:"; then
+    print_result 0 "Bucket initialization job is defined"
+else
+    print_result 1 "Bucket initialization job is missing"
+fi
+
+if echo "$CONFIG" | grep -A 8 "minio-create-bucket:" | grep -q "MINIO_BUCKET:.*ysweet-data"; then
+    print_result 0 "Bucket initialization job targets the ysweet-data bucket"
+else
+    print_result 1 "Bucket initialization job is not configured for ysweet-data"
+fi
+
+# Test 12: Verify Dockerfile existence
+echo ""
+echo "Test 12: Checking Dockerfile files..."
 if [ -f "Dockerfile" ]; then
     print_result 0 "Main Dockerfile exists"
 else
@@ -159,9 +216,9 @@ else
     print_result 1 "Auth Dockerfile not found"
 fi
 
-# Test 10: Check if Dockerfiles use standard npm registry
+# Test 13: Check if Dockerfiles use standard npm registry
 echo ""
-echo "Test 10: Verifying Dockerfiles use standard npm registry..."
+echo "Test 13: Verifying Dockerfiles use standard npm registry..."
 if ! grep -q "registry.npmmirror.com" Dockerfile 2>/dev/null; then
     print_result 0 "Main Dockerfile uses standard npm registry"
 else
@@ -174,21 +231,21 @@ else
     print_result 1 "Auth Dockerfile uses alternative registry"
 fi
 
-# Test 11: Validate nc availability in Alpine
+# Test 14: Validate nc availability in Alpine
 echo ""
-echo "Test 11: Verifying nc (netcat) is available in node:alpine..."
+echo "Test 14: Verifying nc (netcat) is available in node:alpine..."
 if docker run --rm node:20-alpine sh -c "which nc" > /dev/null 2>&1; then
     print_result 0 "nc (netcat) is available in node:20-alpine"
 else
     print_result 1 "nc (netcat) is not available in node:20-alpine"
 fi
 
-# Test 12: Check backend package.json
+# Test 15: Check backend package.json
 echo ""
-echo "Test 12: Checking backend package.json..."
+echo "Test 15: Checking backend package.json..."
 if [ -f "backend/package.json" ]; then
     print_result 0 "backend/package.json exists"
-    
+
     # Check if required dependencies are listed
     if grep -q "@y-sweet/sdk" backend/package.json; then
         print_result 0 "@y-sweet/sdk dependency is listed"
@@ -205,14 +262,14 @@ else
     print_result 1 "backend/package.json not found"
 fi
 
-# Test 13: Verify complete docker-compose structure
+# Test 16: Verify complete docker-compose structure
 echo ""
-echo "Test 13: Verifying complete docker-compose structure..."
-SERVICES_COUNT=$(docker compose config 2>/dev/null | grep -E "^  (ysweet|auth):" | wc -l)
-if [ "$SERVICES_COUNT" -eq 2 ]; then
-    print_result 0 "docker-compose defines 2 services (ysweet and auth)"
+echo "Test 16: Verifying complete docker-compose structure..."
+SERVICES_COUNT=$(docker compose config 2>/dev/null | grep -E "^  (ysweet|auth|minio|minio-create-bucket):" | wc -l)
+if [ "$SERVICES_COUNT" -eq 4 ]; then
+    print_result 0 "docker-compose defines ysweet, auth, minio, and bucket init services"
 else
-    print_result 1 "docker-compose should define 2 services, found $SERVICES_COUNT"
+    print_result 1 "docker-compose should define 4 services, found $SERVICES_COUNT"
 fi
 
 # Print final results

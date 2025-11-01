@@ -6,11 +6,15 @@
 3. 打开 `client/index.html`，在两个浏览器窗口中测试共享同步。
 
 ## 架构说明
-- **ysweet 服务**：在端口 8080 上提供 Y-Sweet WebSocket 服务器，并显式监听 `0.0.0.0` 以供其他容器访问
+- **ysweet 服务**：在端口 8080 上提供 Y-Sweet WebSocket 服务器，并显式监听 `0.0.0.0` 以供其他容器访问，数据持久化到 MinIO 的 S3 兼容存储
 - **auth 服务**：在端口 3001 上提供认证 API (`/api/auth`)
+- **minio 服务**：在端口 9000（API）和 9001（控制台）提供 S3 兼容对象存储
+- **minio-create-bucket**：一次性初始化容器，用于创建 `ysweet-data` bucket
 - **client**：浏览器端应用，连接到 ysweet 和 auth 服务
 
 ## 注意事项
+- MinIO 管理地址：http://localhost:9001，默认账号密码：`ysweetadmin` / `ysweetsecret`
+- MinIO S3 端点：http://localhost:9000，Y-Sweet 使用 bucket `ysweet-data`
 - auth 服务使用 Docker 服务名 `ysweet:8080` 进行容器间通信
 - 客户端使用 `localhost:8080` 从浏览器连接到 ysweet 服务（通过端口映射）
 - 可以通过设置 `PUBLIC_YSWEET_URL`（默认为 `ws://localhost:8080`）来控制发给浏览器的 WebSocket 访问地址，
