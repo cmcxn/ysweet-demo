@@ -25,6 +25,7 @@ services:
       - NODE_ENV=production
       - CONNECTION_STRING=ys://ysweet:8080
       - CLIENT_DIR=/app/client
+      - PUBLIC_YSWEET_URL=ws://localhost:8080
     restart: unless-stopped
     depends_on:
       ysweet:
